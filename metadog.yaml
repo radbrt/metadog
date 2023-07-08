@@ -1,0 +1,23 @@
+version: 1
+sources:
+  - name: snowflake-ax
+    type: database
+    flavor: snowflake
+    dbt_manifest: 
+    connection:
+      account: ax61550.west-europe.azure
+      user: radrun
+      warehouse: DBT_WH
+      database: DBTHOUSE
+      schema: LANDING
+      password: {{ AX_PASSWORD }}
+    databases:
+      # - dbthouse
+      - patch
+  - name: testsftp
+    type: sftp
+    host: 20.82.151.3
+    username: grewhwinouafvreahi
+    password: {{ TESTSFTP_PASSWORD }}
+    port: 22
+    get_schemas: true

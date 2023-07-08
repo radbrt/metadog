@@ -1,0 +1,5 @@
+.env
+data/
+misc/
+._*
+_*.ipynb
