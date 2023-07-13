@@ -1,7 +1,7 @@
 
 
 import click
-from metadog.cli_functions import init_fn, scan_fn
+from metadog.cli_functions import init_fn, scan_fn, warnings_fn
 
 
 @click.group()
@@ -18,6 +18,7 @@ def init(foldername: str):
     Should it initialize the database as well? A flag to not do that?
     """
     init_fn(foldername)
+    
 
 
 @metadog.command()
@@ -29,8 +30,7 @@ def scan(select, no_stats):
 
 @metadog.command()
 def warnings():
-    """Show warnings for the current project"""
-    raise NotImplementedError("Not implemented yet")
+    warnings_fn()
 
 
 @metadog.command()

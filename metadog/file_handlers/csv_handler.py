@@ -15,7 +15,6 @@ class CSVHandler():
         if self.has_header() and self.get_schema:   
 
             t, samples = self.sample_file(sample_rate=100, max_records=1000)
-            print(samples)
             schema = generate_schema(samples)
         else:
             schema = {}
@@ -29,7 +28,6 @@ class CSVHandler():
         sniffer = csv.Sniffer()
         has_header = sniffer.has_header(csv_test_bytes)
         self.filestream.seek(0)
-        print(f"Header? {has_header}")
         return has_header
 
 

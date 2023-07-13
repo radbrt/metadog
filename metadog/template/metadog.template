@@ -1,0 +1,9 @@
+version: 1
+sources:
+    - name: postgres
+      connection:
+        host: localhost
+        username: postgres
+        password: postgres
+        database: postgres
+

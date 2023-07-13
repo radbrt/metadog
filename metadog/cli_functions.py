@@ -9,7 +9,7 @@ from metadog.backend_handlers import GenericBackendHandler
 from metadog.db_scanners import GenericDBScanner
 from metadog.db_scanners.snowflake_scanner import SnowflakeScanner
 from dotenv import load_dotenv
-
+from metadog.outlierdetection import OutlierDetector
 
 
 load_dotenv()
@@ -40,10 +40,28 @@ def setup_backend():
 
 def init_fn(foldername):
     """
-    Initialize a new metadog project in the specified folder
-    Should it initialize the database as well? A flag to not do that?
+    Initialize a new metadog project in the specified folder.
     """
-    raise NotImplementedError("Not implemented yet")
+
+    current_script_dir = os.path.dirname(__file__)
+    source_file_loc = os.path.join(current_script_dir, 'template', 'metadog.template')
+    source_file = open(source_file_loc, 'r')
+    source_file_string = source_file.read()
+    source_file.close()
+
+
+    pth = os.path.join(foldername, 'metadog.yaml')
+    pwd = os.getcwd()
+    if os.path.exists(pth):
+        raise Exception(f"metadog.yaml already exists in {foldername}")
+    else:
+        full_path = os.path.join(pwd, pth)
+        os.makedirs(foldername, exist_ok=False)
+        # Create file
+        with open(full_path, 'w') as f:
+            f.write(source_file_string)
+
+    # raise NotImplementedError("Not implemented yet")
 
 
 def scan_fn(select, no_stats):
@@ -59,7 +77,6 @@ def scan_fn(select, no_stats):
     else:
         backend = GenericBackendHandler()
 
-    # scan_result = {"sources": []}
 
     for source in project_spec["sources"]:
 
@@ -72,7 +89,7 @@ def scan_fn(select, no_stats):
                     do_analyze = source.get("analyze", True) and not no_stats
 
                     db_scanner = SnowflakeScanner(database=db, **config)
-                    # config["database"] = db
+
                     catalog, stats = db_scanner.profile_db(db, do_analyze)
 
                     backend.merge_database_crawl(domain=source['name'], db_json=catalog)
@@ -93,8 +110,6 @@ def scan_fn(select, no_stats):
                     if do_analyze:
                         backend.merge_database_stats(domain=source['name'], db_json=stats)
 
-
-
             case "sftp":
                 print(f"Scanning sftp {source['name']}")
                 get_schemas = source.get("get_schemas", False)
@@ -113,4 +128,30 @@ def scan_fn(select, no_stats):
 
             case _:
                 raise NotImplementedError("Source type not implemented")
-        # scan_result["sources"].append(source_dict)
+
+def warnings_fn():
+    """
+    Print warnings about the current project
+    """
+    project_spec = parse_spec()
+    connection_uri = os.getenv("METADOG_BACKEND_URI")
+    if connection_uri:
+        backend = GenericBackendHandler(connection_uri=connection_uri)
+    else:
+        backend = GenericBackendHandler()
+
+    analyzer = OutlierDetector()
+    partitions = backend.get_partitions()
+
+    n_outier_partitions = 0
+    for partition in partitions:
+        df = backend.get_partition(partition)
+
+        outliers = analyzer.get_outliers_in_df(df)
+        if len(outliers) > 0:
+            print(f"Outliers found in metric URI {partition}")
+            print(outliers)
+            n_outier_partitions += 1
+
+    if n_outier_partitions == 0:
+        print("No outliers found")

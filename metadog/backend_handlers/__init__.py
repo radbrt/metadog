@@ -6,6 +6,7 @@ from metadog.setup import Sources, Files, Fields, TableMetrics, Tables, ColumnMe
 from sqlalchemy.orm import sessionmaker
 import os
 import datetime
+import pandas as pd
 
 class GenericBackendHandler():
     def __init__(self, connection_uri = 'sqlite:///metadog.db'):
@@ -31,7 +32,6 @@ class GenericBackendHandler():
             source = Sources(name=domain, type=protocol, uri=source_uri)
 
         for file in file_list:
-            print(file)
             file_uri = f"{source_uri}/{file['file']}"
 
             file_entry = session.query(Files).filter_by(uri=file_uri).first()
@@ -139,3 +139,25 @@ class GenericBackendHandler():
         session.merge(source)
         session.commit()
         session.close()
+
+
+    def get_partition(self, partition):
+        df = pd.read_sql_query("""
+        SELECT ts as ds, CAST(metric_value as FLOAT) as y FROM table_metrics WHERE uri = '{}'
+        ORDER BY ds
+        LIMIT 1000
+        """.format(partition), self.connection)
+
+        return df
+    
+        # m = Prophet()
+        # m.fit(df)
+        # pred = m.predict(df)
+        # pred['original'] = df['y']
+        # outliers = pred[ (pred['yhat_lower'] > pred['original'])  | (pred['yhat_upper'] < pred['original']) ]
+        # return outliers
+
+
+    def get_partitions(self):
+        partitions = pd.read_sql_query("SELECT distinct uri FROM table_metrics", self.connection)
+        return list(partitions['uri'])
