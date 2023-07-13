@@ -14,6 +14,41 @@ import io
 
 #     return reader
 
+def convert_schema_to_singer(schema):
+    """
+    Convert a schema from sqlalchemy to a singer schema.
+    Not used, not finished.
+    """
+    singer_schema = {
+        "type": ["object"],
+        "properties": {},
+        "additionalProperties": False,
+    }
+
+    for column in schema:
+        singer_schema["properties"][column["name"]] = {
+            "type": str(column["type"]),
+        }
+
+    return singer_schema
+
+def convert_schema_to_openlineage(schema, namespace, name):
+    """
+    Convert a schema from sqlalchemy to an openlineage schema.
+    """
+    openlineage_schema = {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False,
+    }
+
+    for column in schema:
+        openlineage_schema["properties"][column["name"]] = {
+            "type": str(column["type"].as_generic()),
+        }
+
+    return openlineage_schema
+
 
 def sample_file(reader, has_header=True, sep=',', sample_rate=100, max_records=1000):
     samples = []
@@ -132,3 +167,4 @@ def generate_schema(samples):
             }
 
     return schema
+

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
@@ -7,24 +7,22 @@ Base = declarative_base()
 
 class Sources(Base):
     __tablename__ = 'sources'
-
-    # id = Column(Integer)
+    id = Column(Integer, primary_key=True)
     name = Column(String)
     type = Column(String)
-    uri = Column(String, primary_key=True, not_null=True)
+    uri = Column(String, unique=True)
     files = relationship("Files", back_populates="source")
     tables = relationship("Tables", back_populates="source")
     # databases = relationship("Databases", back_populates="source")
 
 class Files(Base):
     __tablename__ = 'files'
-
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    uri = Column(String, primary_key=True, not_null=True)
+    uri = Column(String, unique=True)
     filetype = Column(String)
     file_encoding = Column(String)
-    source_id = Column(Integer, ForeignKey('sources.id'))
+    source_id = Column(Integer, ForeignKey('sources.uri'))
 
     source = relationship("Sources", back_populates="files")
     fields = relationship("Fields", back_populates="file")
@@ -44,9 +42,9 @@ class Files(Base):
 
 class Tables(Base):
     __tablename__ = 'tables'
-
+    id = Column(Integer, primary_key=True)
     name = Column(String)
-    uri = Column(String, primary_key=True, not_null=True)
+    uri = Column(String, unique=True)
     db_name = Column(String)
     schema_name = Column(String)
 
@@ -60,10 +58,10 @@ class Tables(Base):
 
 class Fields(Base):
     __tablename__ = 'fields'
-
+    id = Column(Integer, primary_key=True)
     name = Column(String)
     type = Column(String)
-    uri = Column(String, primary_key=True, not_null=True)
+    uri = Column(String, unique=True)
 
     file_id = Column(Integer, ForeignKey('files.uri'))
     file = relationship("Files", back_populates="fields")
@@ -76,9 +74,10 @@ class Fields(Base):
 
 class TableMetrics(Base):
     __tablename__ = 'table_metrics'
-
     id = Column(Integer, primary_key=True)
-    table_id = Column(Integer, ForeignKey('tables.id'))
+    uri = Column(String)
+    ts = Column(DateTime)
+    table_id = Column(Integer, ForeignKey('tables.uri'))
     table = relationship("Tables", back_populates="table_metrics")
     metric_name = Column(String)
     metric_value = Column(String)
@@ -86,18 +85,16 @@ class TableMetrics(Base):
 
 class ColumnMetrics(Base):
     __tablename__ = 'column_metrics'
-
     id = Column(Integer, primary_key=True)
-    field_id = Column(Integer, ForeignKey('fields.id'))
+    uri = Column(String)
+    ts = Column(DateTime)
+    field_id = Column(Integer, ForeignKey('fields.uri'))
     metric_name = Column(String)
     metric_value = Column(String)
 
     field = relationship("Fields", back_populates="column_metrics")
 
 
-
-# engine = create_engine("sqlite:///metadog.db")
-# Base.metadata.create_all(engine)
 
 
 def run_model_ddls():

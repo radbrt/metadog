@@ -3,7 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from snowflake.sqlalchemy import URL as sfURL
 from .analyze import analyze_table
-
+from sqlalchemy.orm import sessionmaker
+from .setup import Sources, Files, Fields, TableMetrics, Tables, ColumnMetrics
+import datetime
+import os
 
 def get_db_uri(db_type: str, **kwargs) -> URL | str:
     """
@@ -111,5 +114,97 @@ def profile_db(db_flavor, db_name, connection_info, do_scan) -> tuple:
 
         full_scan["schemas"][schema] = tbl_schemas
 
+        merge_database_crawl(db_name, full_scan)
+        merge_database_stats(db_name, all_stats)
+
     return full_scan, all_stats
+
+
+def merge_database_stats(domain, db_json):
+    
+    ts = datetime.datetime.utcnow()
+
+    connect_string = os.getenv("METADOG_BACKEND_URI") or 'sqlite:///metadog.db'
+    engine = create_engine(connect_string)
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    source_uri = f"snowflake://{domain}"
+
+    source = session.query(Sources).filter_by(uri=source_uri).first()
+
+    if not source:
+        print("creating source")
+        source = Sources(name="ax", type="database", uri=source_uri)
+
+    session.merge(source)
+
+    for stat in db_json['stats']:
+        table_uri = f"{source_uri}/{db_json['database']}/{stat['schema']}/{stat['table']}"
+        table = session.query(Tables).filter_by(uri=table_uri).first()
+        if not table:
+            table = Tables(name=stat["table"], uri = table_uri, db_name=db_json['database'], schema_name=stat['schema'])
+        else:
+            table.db_name=db_json['database'] 
+            table.schema_name=stat['schema']
+        source.tables.append(table)
+
+
+        for metric in stat['stats'][0].keys():
+
+            tbl_metric = TableMetrics(
+                metric_name=metric, 
+                metric_value=float(stat['stats'][0][metric]), 
+                uri = f"{table_uri}/{metric}",
+                ts = ts
+                )
+            table.table_metrics.append(tbl_metric)
+
+    session.merge(source)
+    session.commit()
+    session.close()
+
+
+def merge_database_crawl(domain, db_json):
+    
+    connect_string = os.getenv("METADOG_BACKEND_URI") or 'sqlite:///metadog.db'
+    engine = create_engine(connect_string)
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    source = session.query(Sources).filter_by(uri=f"snowflake://{domain}").first()
+    
+    if not source:
+        source = Sources(name="ax", type="database", uri=f"snowflake://{domain}")
+
+
+    for schema_name in db_json['schemas'].keys():
+        
+        schema = db_json['schemas'][schema_name]
+
+        for table_element in db_json['schemas'][schema_name]:
+            table_uri = f"snowflake://{domain}/{db_json['database']}/{schema_name}/{table_element['name']}"
+            table = session.query(Tables).filter_by(uri=table_uri).first()
+            if not table:
+                table = Tables(name=table_element["name"], uri = table_uri, db_name=db_json['database'], schema_name=schema_name)
+            else:
+                table.db_name=db_json['database'] 
+                table.schema_name=schema_name
+            source.tables.append(table)
+
+            for column_name in table_element['properties'].keys():
+                column_uri = f"{table_uri}/{column_name}"
+                column = session.query(Fields).filter_by(uri=column_uri).first()
+                if not column:
+                    column = Fields(name=column_name, type=table_element['properties'][column_name]['type'], uri = column_uri)
+                else:
+                    column.type=table_element['properties'][column_name]['type']
+                table.fields.append(column)
+
+
+    session.merge(source)
+    # Commit the session to write the data to the database
+    session.commit()
+    session.close()
+
 

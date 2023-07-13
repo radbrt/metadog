@@ -3,3 +3,6 @@ data/
 misc/
 ._*
 _*.ipynb
+*.db
+__pycache__/
+test/
