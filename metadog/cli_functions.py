@@ -34,7 +34,8 @@ def write_metadata(scan_payload):
     raise NotImplementedError("Not implemented yet")
 
 
-def setup_backend():
+def backend_fn():
+    spec = parse_spec()
     run_model_ddls()
 
 
