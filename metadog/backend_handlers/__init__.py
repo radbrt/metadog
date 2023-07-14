@@ -152,12 +152,17 @@ class GenericBackendHandler():
                 table.schema_name=stat['schema']
             source.tables.append(table)
 
+            def coerce_float(x):
+                try:
+                    return float(x)
+                except:
+                    return None
 
             for metric in stat['stats'][0].keys():
-
+                float_value = 
                 tbl_metric = TableMetrics(
                     metric_name=metric, 
-                    metric_value=float(stat['stats'][0][metric]), 
+                    metric_value=coerce_float(stat['stats'][0][metric]), 
                     uri = f"{table_uri}/{metric}",
                     ts = ts
                     )
