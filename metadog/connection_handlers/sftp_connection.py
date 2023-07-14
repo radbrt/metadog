@@ -11,8 +11,12 @@ class SFTPFileSystem():
         self.connection = fsspec.filesystem('sftp', host=self.host, username=self.username, password=self.password)
 
 
+    @property
+    def uri(self):
+        return f"sftp://{self.username}@{self.host}"
+
     def get_files(self):
-        fl = self.connection.ls(self.search_prefix)
+        fl = self.connection.ls(self.search_prefix, detail=True)
 
         return fl
 
@@ -22,4 +26,7 @@ class SFTPFileSystem():
 
         return file_stream
     
-    
+    def get_last_modified(self):
+        fl = self.connection.ls(self.search_prefix, detail=True)
+        max_time = max([f['mtime'] for f in fl])
+        return max_time

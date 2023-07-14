@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, inspect
 import fsspec
 import csv
 from metadog.json_schema import sample_file, generate_schema
-from metadog.setup import Sources, Files, Fields, TableMetrics, Tables, ColumnMetrics
+from metadog.setup import Sources, Files, Fields, TableMetrics, Tables, ColumnMetrics, Scans
 from sqlalchemy.orm import sessionmaker
 import os
 import datetime
@@ -17,6 +17,33 @@ class GenericBackendHandler():
     def _connect(self):
         engine = create_engine(self.connection_uri)
         return engine
+
+    def register_scan(self, server, last_modified):
+        engine = self._connect()
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+
+        scan = Scans(server=server, last_modified=last_modified, scan_time=datetime.datetime.utcnow() )
+        
+        session.add(scan)
+        session.commit()
+        session.close()
+
+
+    def get_last_modified(self, server):
+        engine = self._connect()
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        last_modified = session.query(Scans).filter_by(server=server).order_by(Scans.scan_time.desc()).first()
+
+        session.close()
+
+        if last_modified is None:
+            return None
+
+        return last_modified.last_modified
 
 
     def merge_file_crawl(self, domain, protocol, file_list):

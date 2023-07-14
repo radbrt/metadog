@@ -95,6 +95,12 @@ class ColumnMetrics(Base):
     field = relationship("Fields", back_populates="column_metrics")
 
 
+class Scans(Base):
+    __tablename__ = 'scans'
+    id = Column(Integer, primary_key=True)
+    server = Column(String)
+    scan_time = Column(DateTime)
+    last_modified = Column(DateTime)
 
 
 def run_model_ddls():
