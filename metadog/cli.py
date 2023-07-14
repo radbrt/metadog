@@ -21,7 +21,7 @@ def init(foldername: str):
     
 
 @metadog.command()
-def backend(foldername: str):
+def backend():
     backend_fn()
     
 
