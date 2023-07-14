@@ -159,10 +159,10 @@ class GenericBackendHandler():
                     return None
 
             for metric in stat['stats'][0].keys():
-                float_value = 
+                float_value = coerce_float(stat['stats'][0][metric])
                 tbl_metric = TableMetrics(
                     metric_name=metric, 
-                    metric_value=coerce_float(stat['stats'][0][metric]), 
+                    metric_value=float_value, 
                     uri = f"{table_uri}/{metric}",
                     ts = ts
                     )
