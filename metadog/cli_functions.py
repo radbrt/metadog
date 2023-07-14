@@ -26,7 +26,7 @@ def parse_spec():
         else:
             raise Exception("METADOG_BACKEND_URI not set")
     spec = safe_load(jinja_parsed)
-
+    print(spec)
     return spec
 
 
