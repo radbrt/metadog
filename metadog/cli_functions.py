@@ -8,7 +8,7 @@ from metadog.file_handlers.csv_handler import CSVHandler
 from metadog.backend_handlers import GenericBackendHandler
 from metadog.db_scanners import GenericDBScanner
 from metadog.db_scanners.snowflake_scanner import SnowflakeScanner
-from dotenv import load_dotenv
+
 from metadog.outlierdetection import OutlierDetector
 
 
@@ -18,9 +18,9 @@ load_dotenv()
 def parse_spec():
     spec_txt = open('metadog.yaml', 'r').read()
 
-    de = dotenv_values()
+    de = dotenv_values(".env")
     print(de)
-    jinja_parsed = jinja2.Template(spec_txt).render(dotenv_values())
+    jinja_parsed = jinja2.Template(spec_txt).render(de)
     print(jinja_parsed)
     if not os.getenv("METADOG_BACKEND_URI"):
         if 'METADOG_BACKEND_URI' in dotenv_values():
