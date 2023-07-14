@@ -17,7 +17,11 @@ load_dotenv()
 
 def parse_spec():
     spec_txt = open('metadog.yaml', 'r').read()
+
+    de = dotenv_values()
+    print(de)
     jinja_parsed = jinja2.Template(spec_txt).render(dotenv_values())
+    print(jinja_parsed)
     if not os.getenv("METADOG_BACKEND_URI"):
         if 'METADOG_BACKEND_URI' in dotenv_values():
             backend_uri = dotenv_values()['METADOG_BACKEND_URI'] or 'sqlite:///metadog.db'
