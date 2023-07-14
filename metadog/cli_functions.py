@@ -4,10 +4,12 @@ import os
 import jinja2
 from .setup import run_model_ddls
 from metadog.connection_handlers.sftp_connection import SFTPFileSystem
+from metadog.connection_handlers.s3_connection import S3FileSystem
 from metadog.file_handlers.csv_handler import CSVHandler
 from metadog.backend_handlers import GenericBackendHandler
 from metadog.db_scanners import GenericDBScanner
 from metadog.db_scanners.snowflake_scanner import SnowflakeScanner
+import pandas as pd
 
 from metadog.outlierdetection import OutlierDetector
 
@@ -129,6 +131,31 @@ def scan_fn(select, no_stats):
                 last_modified = filesystem.get_last_modified()
                 backend.register_scan(server=source['name'], last_modified=last_modified)
 
+            case "s3":
+                print(f"Scanning s3 {source['name']}")
+                get_schemas = source.get("get_schemas", False)
+                filesystem = S3FileSystem(search_prefix=source['bucket'], storage_options=source['connection'])
+
+                ####### ABSTRACT AWAY #######
+                all_files = filesystem.get_files()
+                highwater = backend.get_last_modified(server=source['name'])
+                files = [f['name'] for f in all_files if f['mtime'] > highwater]
+                schemas = []
+                for file_name in files:
+                    if file_name.endswith('.csv'):
+                        print(file_name)
+                        file_stream = filesystem.get_file(file_name)
+                        csv_handler = CSVHandler(file_stream, file_name, get_schema=get_schemas)
+                        schemas.append(csv_handler.get_file_metadata())
+                    else:
+                        schemas.append({"file": file_name, "properties": {} })
+                
+                file_domain = filesystem.uri
+                backend.merge_file_crawl(domain=source['name'], protocol='s3', file_list=schemas)
+                last_modified = filesystem.get_last_modified()
+                backend.register_scan(server=source['name'], last_modified=last_modified)
+
+
             case _:
                 raise NotImplementedError("Source type not implemented")
 
@@ -154,11 +181,11 @@ def warnings_fn():
         if len(df) > 1:
             outliers = analyzer.get_outliers_in_df(df)
         else:
-            outliers = []
-            
+            outliers = pd.DataFrame()
+
         if len(outliers) > 1:
             print(f"Outliers found in metric URI {partition}")
-            print(outliers)
+            print(outliers.to_markdown( index=False, floatfmt=".2f", tablefmt="pretty"))
             n_outier_partitions += 1
 
     if n_outier_partitions == 0:

@@ -1,6 +1,7 @@
 version: 1
 sources:
     - name: postgres
+      type: postgres
       connection:
         host: localhost
         username: postgres

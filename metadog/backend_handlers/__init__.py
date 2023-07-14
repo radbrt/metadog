@@ -41,7 +41,7 @@ class GenericBackendHandler():
         session.close()
 
         if last_modified is None:
-            return None
+            return datetime.datetime(1970, 1, 1, 0, 0, 0, 0)
 
         return last_modified.last_modified
 

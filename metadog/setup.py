@@ -22,7 +22,7 @@ class Files(Base):
     uri = Column(String, unique=True)
     filetype = Column(String)
     file_encoding = Column(String)
-    source_id = Column(Integer, ForeignKey('sources.uri'))
+    source_id = Column(String, ForeignKey('sources.uri'))
 
     source = relationship("Sources", back_populates="files")
     fields = relationship("Fields", back_populates="file")
@@ -48,7 +48,7 @@ class Tables(Base):
     db_name = Column(String)
     schema_name = Column(String)
 
-    source_id = Column(Integer, ForeignKey('sources.uri'))
+    source_id = Column(String, ForeignKey('sources.uri'))
     source = relationship("Sources", back_populates="tables")
     # database_id = Column(Integer, ForeignKey('databases.id'))
     # database = relationship("Databases", back_populates="tables")
@@ -63,10 +63,10 @@ class Fields(Base):
     type = Column(String)
     uri = Column(String, unique=True)
 
-    file_id = Column(Integer, ForeignKey('files.uri'))
+    file_id = Column(String, ForeignKey('files.uri'))
     file = relationship("Files", back_populates="fields")
 
-    table_id = Column(Integer, ForeignKey('tables.uri'))
+    table_id = Column(String, ForeignKey('tables.uri'))
     table = relationship("Tables", back_populates="fields")
 
     column_metrics = relationship("ColumnMetrics", back_populates="field")
@@ -77,7 +77,7 @@ class TableMetrics(Base):
     id = Column(Integer, primary_key=True)
     uri = Column(String)
     ts = Column(DateTime)
-    table_id = Column(Integer, ForeignKey('tables.uri'))
+    table_id = Column(String, ForeignKey('tables.uri'))
     table = relationship("Tables", back_populates="table_metrics")
     metric_name = Column(String)
     metric_value = Column(String)
@@ -88,7 +88,7 @@ class ColumnMetrics(Base):
     id = Column(Integer, primary_key=True)
     uri = Column(String)
     ts = Column(DateTime)
-    field_id = Column(Integer, ForeignKey('fields.uri'))
+    field_id = Column(String, ForeignKey('fields.uri'))
     metric_name = Column(String)
     metric_value = Column(String)
 
