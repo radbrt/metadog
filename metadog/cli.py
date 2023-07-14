@@ -1,7 +1,7 @@
 
 
 import click
-from metadog.cli_functions import init_fn, scan_fn, warnings_fn
+from metadog.cli_functions import init_fn, scan_fn, warnings_fn, backend_fn
 
 
 @click.group()
@@ -20,6 +20,10 @@ def init(foldername: str):
     init_fn(foldername)
     
 
+@metadog.command()
+def backend(foldername: str):
+    backend_fn()
+    
 
 @metadog.command()
 @click.option('--select', '-s', help='Select sources to scan')
