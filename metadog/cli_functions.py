@@ -19,9 +19,7 @@ def parse_spec():
     spec_txt = open('metadog.yaml', 'r').read()
 
     de = dotenv_values(".env")
-    print(de)
     jinja_parsed = jinja2.Template(spec_txt).render(de)
-    print(jinja_parsed)
     if not os.getenv("METADOG_BACKEND_URI"):
         if 'METADOG_BACKEND_URI' in dotenv_values():
             backend_uri = dotenv_values()['METADOG_BACKEND_URI'] or 'sqlite:///metadog.db'
@@ -30,12 +28,8 @@ def parse_spec():
         else:
             raise Exception("METADOG_BACKEND_URI not set")
     spec = safe_load(jinja_parsed)
-    print(spec)
+
     return spec
-
-
-def write_metadata(scan_payload):
-    raise NotImplementedError("Not implemented yet")
 
 
 def backend_fn():
@@ -65,8 +59,6 @@ def init_fn(foldername):
         # Create file
         with open(full_path, 'w') as f:
             f.write(source_file_string)
-
-    # raise NotImplementedError("Not implemented yet")
 
 
 def scan_fn(select, no_stats):
@@ -157,9 +149,14 @@ def warnings_fn():
     n_outier_partitions = 0
     for partition in partitions:
         df = backend.get_partition(partition)
+        df.dropna(inplace=True)
 
-        outliers = analyzer.get_outliers_in_df(df)
-        if len(outliers) > 0:
+        if len(df) > 1:
+            outliers = analyzer.get_outliers_in_df(df)
+        else:
+            outliers = []
+            
+        if len(outliers) > 1:
             print(f"Outliers found in metric URI {partition}")
             print(outliers)
             n_outier_partitions += 1
