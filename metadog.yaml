@@ -26,3 +26,10 @@ sources:
     get_schemas: true
     connection:
       anon: true
+  - name: fabby
+    type: az
+    path: fabby
+    get_schemas: true
+    connection:
+      account_name: radlake
+      account_key: '25pChXoiu2pK3PK0/2ATEQpDa2VA3At8v6QUGRBrcVlJxdNNej8ZcDBmnpsmt1p/vSxbbP9FaAqy+ASt0IbVyg=='
